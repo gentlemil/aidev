@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import type { AgentStreamEvent, StepStatus } from '@/features/ai-devs/tasks/people/people.events'
 import type { TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
+import { PEOPLE_CONFIG } from '@/configs/people.config'
+import { AIProviders, AVAILABLE_MODELS } from '@/lib/ai-models'
 import { PageContainer, PageHeader } from '@/components/layout/page-container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -147,6 +149,8 @@ export default function PeopleTaggerPage() {
   const [result, setResult] = useState<RunResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [hubExpanded, setHubExpanded] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<AIProviders>(AIProviders.OPEN_ROUTER)
+  const [selectedModel, setSelectedModel] = useState<string>(PEOPLE_CONFIG.model)
 
   const logRef = useRef<HTMLDivElement>(null)
 
@@ -223,7 +227,11 @@ export default function PeopleTaggerPage() {
     setHubExpanded(false)
 
     try {
-      const response = await fetch('/api/tasks/people/stream', { method: 'POST' })
+      const response = await fetch('/api/tasks/people/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: selectedModel, provider: selectedProvider }),
+      })
 
       if (!response.ok || !response.body) {
         setError(`HTTP ${response.status}: failed to start agent`)
@@ -290,11 +298,35 @@ export default function PeopleTaggerPage() {
       {/* Config strip */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">Config:</span>
-        <Badge variant="outline" className="gap-1.5">
-          <Cpu className="h-3 w-3" />
-          gpt-4o-mini
-        </Badge>
-        <Badge variant="outline">OpenRouter</Badge>
+        <div className="flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+          <select
+            value={selectedProvider}
+            onChange={(e) => {
+              const p = e.target.value as AIProviders
+              setSelectedProvider(p)
+              setSelectedModel(AVAILABLE_MODELS[p][0].value)
+            }}
+            disabled={isRunning}
+            className="bg-transparent text-xs outline-none disabled:opacity-50">
+            {Object.values(AIProviders).map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-md border px-2 py-0.5">
+          <Cpu className="h-3 w-3 text-muted-foreground" />
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            disabled={isRunning}
+            className="bg-transparent text-xs outline-none disabled:opacity-50">
+            {AVAILABLE_MODELS[selectedProvider].map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <Badge variant="outline">CSV source</Badge>
         <Badge variant="outline">Filter → Tag → Submit</Badge>
         {runStatus !== 'idle' && (

@@ -1,13 +1,17 @@
 import { filterPeople } from '@/features/ai-devs/tasks/people/people.filter'
 import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people.tagger'
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
+import { AIProviders } from '@/lib/ai-models'
 import type { Person, TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
 import type { AgentStreamEvent } from '@/features/ai-devs/tasks/people/people.events'
 import { submitAnswer } from '@/features/ai-devs/hub'
 import { parseCSV } from '@/lib/csv'
 import { getYear } from 'date-fns'
 
-export async function POST() {
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => ({}))
+  const model: string = (body as { model?: string }).model ?? config.model
+  const provider: AIProviders = (body as { provider?: AIProviders }).provider ?? AIProviders.OPEN_ROUTER
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
@@ -86,7 +90,7 @@ export async function POST() {
         send({ type: 'step', id: 'tag', status: 'running', message: 'Tagging jobs with LLM…' })
 
         const jobs = filtered.map((p: Person) => p.job)
-        const { results: taggingResults, model, usage } = await tagJobsBatch(jobs)
+        const { results: taggingResults, usage } = await tagJobsBatch(jobs, model, provider)
 
         if (usage) {
           send({
