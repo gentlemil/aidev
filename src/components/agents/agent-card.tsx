@@ -7,10 +7,11 @@ import {
   Tags,
   Users,
   type LucideProps,
-} from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { AgentDefinition } from "@/features/agents/agent-registry"
+} from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import type { AgentDefinition } from '@/features/agents/agent-registry'
+import Link from 'next/link'
 
 const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   FileSearch,
@@ -23,9 +24,9 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
 }
 
 const statusConfig = {
-  available: { label: "Available", variant: "success" as const },
-  beta: { label: "Beta", variant: "info" as const },
-  coming_soon: { label: "Coming soon", variant: "secondary" as const },
+  available: { label: 'Available', variant: 'success' as const },
+  beta: { label: 'Beta', variant: 'info' as const },
+  coming_soon: { label: 'Coming soon', variant: 'secondary' as const },
 }
 
 interface AgentCardProps {
@@ -51,10 +52,12 @@ export function AgentCard({ agent }: AgentCardProps) {
       <CardContent className="mt-auto pt-0">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">{agent.category}</span>
-          {agent.status === "available" ? (
-            <span className="text-xs font-medium text-amber-700 group-hover:underline">
-              Open →
-            </span>
+          {agent.status === 'available' ? (
+            <Link href={agent.url ?? '#'}>
+              <span className="text-xs font-medium text-amber-700 group-hover:underline">
+                Open →
+              </span>
+            </Link>
           ) : (
             <span className="text-xs text-muted-foreground">Not yet available</span>
           )}
