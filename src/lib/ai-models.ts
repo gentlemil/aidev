@@ -95,6 +95,12 @@ export const AVAILABLE_MODELS = {
       description:
         'Balanced high-quality model from Mistral, suitable for chat, coding, and general-purpose agents.',
     },
+    {
+      label: 'OpenAI: GPT-5 Mini (faster, more cost-efficient variant of GPT-5)',
+      value: 'openai/gpt-5-mini',
+      description:
+        'The smallest variant of the upcoming GPT-5 series, optimized for cost-efficiency and basic tasks.',
+    },
   ],
   [AIProviders.LM_STUDIO]: [
     {

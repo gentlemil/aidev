@@ -38,6 +38,17 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/people',
   },
   {
+    id: 'find-him',
+    name: 'Find Him',
+    description:
+      'Locates a suspect from the people list near a nuclear power plant, retrieves their access level, and submits findings to the hub.',
+    slug: 'find-him',
+    status: 'available',
+    category: 'Automation',
+    icon: 'MapPin',
+    url: '/agents/find-him',
+  },
+  {
     id: 'document-analyzer',
     name: 'Document Analyzer',
     description:
