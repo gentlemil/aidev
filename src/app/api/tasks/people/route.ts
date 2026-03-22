@@ -1,4 +1,4 @@
-import { Person, TaggedPerson, TaggingResult } from '@/features/ai-devs/tasks/people/people.types'
+import { Person, TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
 import { filterPeople } from '@/features/ai-devs/tasks/people/people.filter'
 import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people.tagger'
@@ -46,13 +46,11 @@ export async function POST() {
 
     // 4. batch tag jobs with LLM
     const jobs: string[] = filtered.map((person: Person) => person.job)
-    const taggingResults: TaggingResult[] = await tagJobsBatch(jobs)
+    const { results: taggingResults } = await tagJobsBatch(jobs)
 
     const tagged: TaggedPerson[] = filtered
       .map((person: Person, index: number) => {
-        const result: TaggingResult | undefined = taggingResults.find(
-          (res: TaggingResult) => res.id === index
-        )
+        const result = taggingResults.find((res) => res.id === index)
 
         return {
           name: person.name,

@@ -1,4 +1,5 @@
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
+import { TaggingBatchResult, TaggingUsage } from '@/types/llm.types'
 import { TaggingResult } from './people.types'
 
 const TAGGING_SCHEMA = {
@@ -24,7 +25,7 @@ const TAGGING_SCHEMA = {
   additionalProperties: false,
 }
 
-export async function tagJobsBatch(jobs: string[]): Promise<TaggingResult[]> {
+export async function tagJobsBatch(jobs: string[]): Promise<TaggingBatchResult> {
   const jobList: { id: number; job: string }[] = jobs.map((description: string, index: number) => ({
     id: index,
     job: description,
@@ -47,7 +48,7 @@ Rules:
       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: config.model,
       messages: [
         { role: 'system', content: PROMPT },
         { role: 'user', content: JSON.stringify({ jobs: jobList }) },
@@ -75,7 +76,15 @@ Rules:
     throw new Error('Empty LLM response')
   }
 
+  const usage: TaggingUsage | null = data.usage
+    ? {
+        promptTokens: data.usage.prompt_tokens as number,
+        completionTokens: data.usage.completion_tokens as number,
+        totalTokens: data.usage.total_tokens as number,
+      }
+    : null
+
   const parsed: { results: TaggingResult[] } = JSON.parse(content) as { results: TaggingResult[] }
 
-  return parsed.results
+  return { results: parsed.results, model: config.model, usage }
 }

@@ -5,6 +5,7 @@ import {
   FileSearch,
   MessageSquare,
   Tags,
+  Users,
   type LucideProps,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,7 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   Tags,
   MessageSquare,
   BarChart2,
+  Users,
 }
 
 const statusConfig = {

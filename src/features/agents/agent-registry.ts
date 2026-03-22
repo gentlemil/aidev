@@ -26,6 +26,16 @@ export interface AgentDefinition {
 
 export const agentRegistry: AgentDefinition[] = [
   {
+    id: "people-tagger",
+    name: "People Tagger",
+    description:
+      "Reads a CSV of people, filters by criteria, tags job descriptions with AI, and submits results to the hub.",
+    slug: "people",
+    status: "available",
+    category: "Data",
+    icon: "Users",
+  },
+  {
     id: "document-analyzer",
     name: "Document Analyzer",
     description:
