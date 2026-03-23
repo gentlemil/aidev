@@ -1,6 +1,6 @@
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
 import { AIProviders, PROVIDER_API } from '@/lib/ai-models'
-import { TaggingBatchResult, TaggingUsage } from '@/types/llm.types'
+import { LLMResult, LLMUsage } from '@/types/llm.types'
 import { TaggingResult } from './people.types'
 
 const TAGGING_SCHEMA = {
@@ -30,9 +30,10 @@ export async function tagJobsBatch(
   jobs: string[],
   model: string = config.model,
   provider: AIProviders = AIProviders.OPEN_ROUTER
-): Promise<TaggingBatchResult> {
-  const { url, getKey } = PROVIDER_API[provider]
+): Promise<LLMResult> {
+  const { url, getKey, resolveModel } = PROVIDER_API[provider]
   const apiKey = getKey()
+  const resolvedModel = resolveModel(model)
   const jobList: { id: number; job: string }[] = jobs.map((description: string, index: number) => ({
     id: index,
     job: description,
@@ -55,7 +56,7 @@ Rules:
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
     },
     body: JSON.stringify({
-      model,
+      model: resolvedModel,
       messages: [
         { role: 'system', content: PROMPT },
         { role: 'user', content: JSON.stringify({ jobs: jobList }) },
@@ -83,7 +84,7 @@ Rules:
     throw new Error('Empty LLM response')
   }
 
-  const usage: TaggingUsage | null = data.usage
+  const usage: LLMUsage | null = data.usage
     ? {
         promptTokens: data.usage.prompt_tokens as number,
         completionTokens: data.usage.completion_tokens as number,

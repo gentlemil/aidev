@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TaggedPerson, TaggingResult } from '@/features/ai-devs/tasks/people/people.types'
 import { StepStatus } from '@/features/ai-devs/tasks/people/people.events'
 
-export type TaggingUsage = {
+export type LLMUsage = {
   promptTokens: number
   completionTokens: number
   totalTokens: number
 }
 
-export type TaggingBatchResult = {
-  results: TaggingResult[]
+export type LLMResult = {
+  results: TaggingResult[] | any
   model: string
-  usage: TaggingUsage | null
+  usage: LLMUsage | null
 }
 
 export type RunStatus = 'idle' | 'running' | 'done' | 'error'

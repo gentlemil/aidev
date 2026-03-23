@@ -1,5 +1,5 @@
 import { filterPeople } from '@/features/ai-devs/tasks/people/people.filter'
-import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people.tagger'
+import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people-tagger.agent'
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
 import { AIProviders } from '@/lib/ai-models'
 import type { Person, TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
@@ -11,7 +11,8 @@ import { getYear } from 'date-fns'
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const model: string = (body as { model?: string }).model ?? config.model
-  const provider: AIProviders = (body as { provider?: AIProviders }).provider ?? AIProviders.OPEN_ROUTER
+  const provider: AIProviders =
+    (body as { provider?: AIProviders }).provider ?? AIProviders.OPEN_ROUTER
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({

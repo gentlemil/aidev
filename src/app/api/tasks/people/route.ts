@@ -1,7 +1,7 @@
 import { Person, TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
 import { PEOPLE_CONFIG as config } from '@/configs/people.config'
 import { filterPeople } from '@/features/ai-devs/tasks/people/people.filter'
-import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people.tagger'
+import { tagJobsBatch } from '@/features/ai-devs/tasks/people/people-tagger.agent'
 import { submitAnswer } from '@/features/ai-devs/hub'
 import { NextResponse } from 'next/server'
 import { parseCSV } from '@/lib/csv'

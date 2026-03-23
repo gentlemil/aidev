@@ -3,6 +3,7 @@ import {
   BarChart2,
   Database,
   FileSearch,
+  MapPin,
   MessageSquare,
   Tags,
   Users,
@@ -21,6 +22,7 @@ const iconMap: Record<string, React.ComponentType<LucideProps>> = {
   MessageSquare,
   BarChart2,
   Users,
+  MapPin,
 }
 
 const statusConfig = {

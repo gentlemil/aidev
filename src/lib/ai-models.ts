@@ -4,18 +4,27 @@ export enum AIProviders {
   LM_STUDIO = 'LM Studio',
 }
 
-export const PROVIDER_API: Record<AIProviders, { url: string; getKey: () => string }> = {
+export const PROVIDER_API: Record<
+  AIProviders,
+  { url: string; getKey: () => string; resolveModel: (model: string) => string }
+> = {
   [AIProviders.OPEN_AI]: {
     url: 'https://api.openai.com/v1/chat/completions',
     getKey: () => process.env.OPENAI_API_KEY ?? '',
+    // OpenAI API expects bare model name, strip "openai/" prefix if present
+    resolveModel: (model) => model.replace(/^openai\//, ''),
   },
   [AIProviders.OPEN_ROUTER]: {
     url: 'https://openrouter.ai/api/v1/chat/completions',
     getKey: () => process.env.OPENROUTER_API_KEY ?? '',
+    // OpenRouter expects "provider/model" format — pass as-is
+    resolveModel: (model) => model,
   },
   [AIProviders.LM_STUDIO]: {
     url: 'http://localhost:1234/v1/chat/completions',
     getKey: () => '',
+    // LM Studio uses local model identifiers without prefix
+    resolveModel: (model) => model,
   },
 }
 
@@ -96,7 +105,7 @@ export const AVAILABLE_MODELS = {
         'Balanced high-quality model from Mistral, suitable for chat, coding, and general-purpose agents.',
     },
     {
-      label: 'OpenAI: GPT-5 Mini (faster, more cost-efficient variant of GPT-5)',
+      label: 'GPT-5 Mini (faster, more cost-efficient variant of GPT-5)',
       value: 'openai/gpt-5-mini',
       description:
         'The smallest variant of the upcoming GPT-5 series, optimized for cost-efficiency and basic tasks.',
