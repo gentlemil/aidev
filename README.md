@@ -1,6 +1,12 @@
-# AgentHub — AI Agents Platform MVP
+<div align="center">
+  <a href="https://www.aidevs.pl/">
+    <img src="public/assets/ai_devs_4.svg" alt="AI_devs 4" />
+  </a>
+</div>
 
-A full-stack foundation for a multi-agent AI platform built with Next.js 14 App Router, Auth.js v5, Prisma, and shadcn/ui.
+# AgentHub — AI Agents Platform
+
+A full-stack platform for building and running AI agents, built with Next.js App Router, Auth.js v5, Prisma, and shadcn/ui. Built as part of the AI_devs course (S01).
 
 ## Tech Stack
 
@@ -14,54 +20,103 @@ A full-stack foundation for a multi-agent AI platform built with Next.js 14 App 
 | Database | SQLite (local) / PostgreSQL-ready |
 | Validation | Zod |
 | Forms | React Hook Form + @hookform/resolvers |
-| Toasts | Sonner |
+| AI Providers | OpenAI, OpenRouter, LM Studio (local) |
 | Icons | Lucide React |
-| Password hashing | bcryptjs |
 
-## Features
+## Agents
 
-- **Landing page** — hero, features grid, CTA
-- **Auth** — register, login, logout with Zod validation, friendly error messages, toast notifications
-- **Route protection** — Auth.js v5 middleware (edge-safe, no DB on edge)
-- **App shell** — responsive sidebar (dark) + topbar, mobile hamburger
-- **Dashboard** — stats cards, agent library preview, documents placeholder
-- **Agents page** — renders all agents from the typed registry
-- **Documents page** — placeholder with planned-feature cards
-- **Settings page** — displays live user data from DB (name, email, verified, timestamps)
-- **Typed agent registry** — ready to add real agent execution
+### People Tagger (`/agents/people`) — S01E01
+
+Fetches a CSV of people from the hub, filters by criteria (gender, city, age range), tags job descriptions with LLM, and submits matching results.
+
+**Flow:** Fetch CSV → Filter → Tag jobs with LLM → Submit to hub
+
+**Tools used:** OpenAI Chat Completions API (structured output / JSON schema)
+
+---
+
+### Find Him (`/agents/find-him`) — S01E02
+
+Multi-step function-calling agent that locates a suspect near a nuclear power plant, retrieves their access level, and submits findings to the hub.
+
+**Flow:** Get power plants → Get suspect locations → Calculate distances (Haversine) → Check access level → Submit
+
+**Tools (function calling):**
+- `get_power_plants` — fetches plant list (city, code, power) from hub
+- `get_survivor_locations` — fetches lat/lng history for a given person
+- `calculate_distance` — server-side Haversine calculation (deterministic, no LLM guessing)
+- `check_access_level` — fetches access level by name + birth year
+- `submit_answer` — submits final answer to hub
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── (auth)/            # /login, /register — centered layout
-│   ├── (dashboard)/       # /dashboard, /agents, /documents, /settings — app shell
-│   ├── api/auth/          # Auth.js route handler
-│   ├── layout.tsx         # Root layout (font, Toaster)
-│   └── page.tsx           # Landing page
-├── components/
-│   ├── agents/            # AgentCard
-│   ├── auth/              # LoginForm, RegisterForm
-│   ├── layout/            # AppShell, Sidebar, Topbar, PageContainer
-│   └── ui/                # shadcn/ui components
+│   ├── (auth)/                    # /login, /register
+│   ├── (dashboard)/               # /dashboard, /agents, /settings
+│   │   └── agents/
+│   │       ├── people/            # People Tagger UI
+│   │       └── find-him/          # Find Him UI
+│   ├── api/tasks/
+│   │   ├── people/stream/         # SSE stream for People Tagger
+│   │   └── find-him/              # GET (power plants) + POST + stream
+│   └── api/auth/
+├── configs/
+│   ├── people.config.ts           # URLs, model, filter params for S01E01
+│   └── find-him.config.ts         # URLs, max iterations for S01E02
 ├── features/
-│   ├── agents/            # agent-registry.ts (typed agent definitions)
-│   ├── auth/              # Server actions (login, register, logout)
-│   └── documents/         # Placeholder for future document workflows
+│   ├── agents/
+│   │   └── agent-registry.ts      # Typed agent definitions
+│   ├── auth/                      # Server actions (login, register, logout)
+│   └── ai-devs/
+│       ├── hub.ts                 # submitAnswer() — shared across tasks
+│       └── tasks/
+│           ├── people/            # types, filter, tagger agent
+│           └── find-him/          # types, consts, tools, agent
 ├── lib/
-│   ├── ai/                # Reserved for AI SDK integration
-│   ├── auth.config.ts     # Edge-safe auth config (used by middleware)
-│   ├── auth.ts            # Full auth config with PrismaAdapter
-│   ├── current-user.ts    # getCurrentUser(), getCurrentUserFull(), requireUser()
-│   ├── db.ts              # Prisma client singleton
-│   └── utils.ts           # cn(), getInitials(), getFullName()
-├── middleware.ts           # Route protection (edge runtime)
-├── schemas/
-│   └── auth.ts            # Zod schemas for sign-in and registration
+│   ├── ai-models.ts               # AIProviders enum, PROVIDER_API, AVAILABLE_MODELS
+│   ├── csv.ts                     # Generic parseCSV<T>() with quoted-field support
+│   ├── auth.ts / auth.config.ts   # Auth.js setup
+│   ├── current-user.ts            # getCurrentUser(), requireUser()
+│   ├── db.ts                      # Prisma client singleton
+│   └── utils.ts                   # cn(), getInitials()
+├── middleware.ts                   # Route protection (edge runtime)
+├── schemas/auth.ts                 # Zod schemas
 └── types/
-    └── next-auth.d.ts     # Session/JWT type augmentation
+    ├── llm.types.ts                # LlmStats, RunStatus, LogEntry, etc.
+    └── next-auth.d.ts
 ```
+
+## AI Provider Support
+
+All agents support switching provider and model from the UI:
+
+| Provider | Env var | Notes |
+|---|---|---|
+| OpenRouter | `OPENROUTER_API_KEY` | Default. Supports all models via `provider/model` format |
+| OpenAI | `OPENAI_API_KEY` | Strips `openai/` prefix automatically |
+| LM Studio | — | No auth, local `http://localhost:1234` |
+
+Model IDs are defined in `src/lib/ai-models.ts` per provider.
+
+## Config Files
+
+Each agent has a dedicated config file in `src/configs/` that controls task-specific parameters (filter criteria, model defaults, hub URLs, iteration limits). These files are **gitignored** so you can tweak them freely without affecting others.
+
+Example templates are committed and serve as the starting point:
+
+| Template | Copy to | Agent |
+|---|---|---|
+| `people.config.example.ts` | `people.config.ts` | People Tagger |
+| `find-him.config.example.ts` | `find-him.config.ts` | Find Him |
+
+```bash
+cp src/configs/people.config.example.ts src/configs/people.config.ts
+cp src/configs/find-him.config.example.ts src/configs/find-him.config.ts
+```
+
+> URLs that include `AI_DEVS_KEY` are built dynamically via getters — the key is read from `.env.local` at runtime, never hardcoded.
 
 ## Getting Started
 
@@ -74,34 +129,32 @@ npm install
 ### 2. Set up environment
 
 ```bash
-cp .env.example .env
-# Edit .env — the defaults work for local development
+cp .env.example .env.local
 ```
 
-Generate a strong `AUTH_SECRET` for production:
-```bash
-openssl rand -base64 32
+Required variables:
+
+```env
+AUTH_SECRET=          # openssl rand -base64 32
+AI_DEVS_KEY=          # your AI_devs hub key
+AI_DEVS_VERIFY_URL=https://hub.ag3nts.org/verify
+OPENROUTER_API_KEY=   # or OPENAI_API_KEY
 ```
 
 ### 3. Set up the database
 
 ```bash
-# Generate Prisma client
+npm run setup          # install + generate + push schema + seed
+```
+
+Or step by step:
+```bash
 npm run db:generate
-
-# Push schema to SQLite
 npm run db:push
-
-# Seed the admin user
 npm run db:seed
 ```
 
-Or run everything at once:
-```bash
-npm run setup
-```
-
-### 4. Start the dev server
+### 4. Start dev server
 
 ```bash
 npm run dev
@@ -109,44 +162,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Seed credentials
-
-| Field | Value |
-|---|---|
-| Email | `admin@admin` |
-| Password | `Test123!` |
+**Seed credentials:** `admin@admin` / `Test123!`
 
 ## Adding a New Agent
 
-1. Add a definition to `src/features/agents/agent-registry.ts`:
-
-```typescript
-{
-  id: "my-agent",
-  name: "My Agent",
-  description: "What this agent does.",
-  slug: "my-agent",
-  status: "available",     // or "coming_soon" | "beta"
-  category: "Documents",
-  icon: "FileSearch",      // lucide-react icon name
-}
-```
-
-2. Create a feature module at `src/features/agents/my-agent/`.
-3. Implement the AI runner in `src/lib/ai/` using the Anthropic SDK or other AI client.
-4. Add a route at `src/app/(dashboard)/agents/my-agent/page.tsx`.
-
-## Migrating to PostgreSQL
-
-1. In `prisma/schema.prisma`, change:
-   ```prisma
-   datasource db {
-     provider = "postgresql"   // was "sqlite"
-     url      = env("DATABASE_URL")
-   }
-   ```
-2. Update `DATABASE_URL` in `.env` to your PostgreSQL connection string.
-3. Run `npm run db:migrate` to apply migrations.
+1. Add entry to `src/features/agents/agent-registry.ts`
+2. Create config in `src/configs/<name>.config.ts`
+3. Create feature module in `src/features/ai-devs/tasks/<name>/`
+4. Add page at `src/app/(dashboard)/agents/<name>/page.tsx`
+5. Add API route at `src/app/api/tasks/<name>/stream/route.ts`
 
 ## Scripts
 
@@ -162,3 +186,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run db:seed` | Seed admin user |
 | `npm run db:studio` | Open Prisma Studio |
 | `npm run setup` | install + generate + push + seed |
+
+## Migrating to PostgreSQL
+
+1. In `prisma/schema.prisma` change provider to `"postgresql"`
+2. Update `DATABASE_URL` in `.env.local`
+3. Run `npm run db:migrate`
