@@ -1,25 +1,15 @@
-import { FIND_HIM_CONFIG as config } from '@/configs/find-him.config'
-import { LocationsResponse } from '@/features/ai-devs/tasks/find-him/find-him.types'
+import { runFindHimAgent } from '@/features/ai-devs/tasks/find-him/find-him.agent'
+import { getPowerPlantsLocations } from '@/features/ai-devs/tasks/find-him/find-him.tools'
+import { AIProviders } from '@/lib/ai-models'
 import { NextResponse } from 'next/server'
+import type { FindHimStreamEvent } from '@/features/ai-devs/tasks/find-him/find-him.events'
+import type { FindHimAnswer } from '@/features/ai-devs/tasks/find-him/find-him.types'
 
-export async function POST() {
+export async function GET() {
   try {
-    const powerPlantsLocationsResponse: Response = await fetch(`${config.powerPlantsLocationUrl}`)
+    const data = await getPowerPlantsLocations()
 
-    if (!powerPlantsLocationsResponse.ok) {
-      return NextResponse.json(
-        { error: `Failed to fetch locations: ${powerPlantsLocationsResponse.status}` },
-        { status: 500 }
-      )
-    }
-
-    const locations: LocationsResponse = await powerPlantsLocationsResponse.json()
-
-    console.log(locations.power_plants)
-
-    // TODO
-
-    return NextResponse.json(locations.power_plants)
+    return NextResponse.json(data)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
 
@@ -27,4 +17,31 @@ export async function POST() {
   }
 }
 
-// curl -X POST http://localhost:3000/api/tasks/find-him
+const DEFAULT_MODEL = `openai/gpt-5-mini`
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}))
+
+    const model: string = (body as { model?: string }).model ?? DEFAULT_MODEL
+
+    const provider: AIProviders =
+      (body as { provider?: AIProviders }).provider ?? AIProviders.OPEN_ROUTER
+
+    let finalAnswer: FindHimAnswer | null = null
+    let hubResponse: unknown = null
+
+    await runFindHimAgent(model, provider, (event: FindHimStreamEvent) => {
+      if (event.type === 'result') {
+        finalAnswer = event.answer
+        hubResponse = event.hubResponse
+      }
+    })
+
+    return NextResponse.json({ success: true, answer: finalAnswer, hubResponse })
+  } catch (error) {
+    const message: string = error instanceof Error ? error.message : 'Unknown error'
+
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
