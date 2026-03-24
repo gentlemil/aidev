@@ -49,6 +49,17 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/find-him',
   },
   {
+    id: 'pipeline',
+    name: 'Pipeline',
+    description:
+      'Two-stage pipeline: Stage 1 tags people from CSV and submits to hub (with retry), then hands off suspects to Stage 2 which locates the closest one to a nuclear power plant.',
+    slug: 'pipeline',
+    status: 'available',
+    category: 'Automation',
+    icon: 'GitMerge',
+    url: '/agents/pipeline',
+  },
+  {
     id: 'document-analyzer',
     name: 'Document Analyzer',
     description:
