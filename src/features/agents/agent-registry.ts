@@ -60,14 +60,15 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/pipeline',
   },
   {
-    id: 'document-analyzer',
-    name: 'Document Analyzer',
+    id: 'evaluation',
+    name: 'Evaluation Agent',
     description:
-      'Analyze and extract structured insights from PDF, Word, and plain-text documents using AI.',
-    slug: 'document-analyzer',
-    status: 'coming_soon',
-    category: 'Documents',
+      'Downloads ~10k sensor readings, detects anomalies via type/range validation and LLM-based operator note analysis, then submits results to the hub.',
+    slug: 'evaluation',
+    status: 'available',
+    category: 'Data',
     icon: 'FileSearch',
+    url: '/agents/evaluation',
   },
   {
     id: 'data-extractor',
