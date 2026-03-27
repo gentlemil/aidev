@@ -110,6 +110,12 @@ export const AVAILABLE_MODELS = {
       description:
         'The smallest variant of the upcoming GPT-5 series, optimized for cost-efficiency and basic tasks.',
     },
+    {
+      label: 'Claude Sonnet 4.6 (high quality, expensive)',
+      value: 'anthropic/claude-sonnet-4.6',
+      description:
+        'High-quality model from Anthropic with strong reasoning, coding, and long-context performance.',
+    },
   ],
   [AIProviders.LM_STUDIO]: [
     {
