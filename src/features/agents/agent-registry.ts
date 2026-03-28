@@ -71,6 +71,17 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/evaluation',
   },
   {
+    id: 'firmware',
+    name: 'Firmware Agent',
+    description:
+      'Connects to a virtual Linux machine via shell API, debugs and runs the ECCS cooling system firmware, then submits the confirmation code to the hub.',
+    slug: 'firmware',
+    status: 'available',
+    category: 'Automation',
+    icon: 'Cpu',
+    url: '/agents/firmware',
+  },
+  {
     id: 'data-extractor',
     name: 'Data Extractor',
     description: 'Extract structured data from unstructured documents, tables, and scanned images.',
