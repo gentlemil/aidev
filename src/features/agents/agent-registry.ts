@@ -85,7 +85,7 @@ export const agentRegistry: AgentDefinition[] = [
     id: 'reactor',
     name: 'Reactor Agent',
     description:
-      'Navigates a robot through a 7×5 grid, avoiding vertically moving blocks, to reach the goal and retrieve the flag.',
+      'Navigates a robot through a 7x5 grid, avoiding vertically moving blocks, to reach the goal and retrieve the flag.',
     slug: 'reactor',
     status: 'available',
     category: 'Automation',
@@ -93,14 +93,25 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/reactor',
   },
   {
-    id: 'data-extractor',
-    name: 'Data Extractor',
-    description: 'Extract structured data from unstructured documents, tables, and scanned images.',
-    slug: 'data-extractor',
-    status: 'coming_soon',
+    id: 'negotiations',
+    name: 'Negotiator Agent',
+    description:
+      'Engages in multi-turn negotiations with a simulated adversary, using strategic reasoning to achieve optimal outcomes.',
+    slug: 'negotiations',
+    status: 'available',
     category: 'Data',
     icon: 'Database',
+    url: '/agents/negotiations',
   },
+  // {
+  //   id: 'data-extractor',
+  //   name: 'Data Extractor',
+  //   description: 'Extract structured data from unstructured documents, tables, and scanned images.',
+  //   slug: 'data-extractor',
+  //   status: 'coming_soon',
+  //   category: 'Data',
+  //   icon: 'Database',
+  // },
 ]
 
 export function getAgentBySlug(slug: string): AgentDefinition | undefined {
