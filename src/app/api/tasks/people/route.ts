@@ -50,7 +50,7 @@ export async function POST() {
 
     const tagged: TaggedPerson[] = filtered
       .map((person: Person, index: number) => {
-        const result = taggingResults.find((res) => res.id === index)
+        const result = taggingResults.find((res: any) => res.id === index)
 
         return {
           name: person.name,

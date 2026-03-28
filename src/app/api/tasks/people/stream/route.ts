@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         // ── Step 4: Build tagged people ──────────────────────────────────
         const tagged: TaggedPerson[] = filtered
           .map((person: Person, index: number) => {
-            const result = taggingResults.find((r) => r.id === index)
+            const result = taggingResults.find((r: any) => r.id === index)
             return {
               name: person.name,
               surname: person.surname,

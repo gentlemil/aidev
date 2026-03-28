@@ -94,9 +94,9 @@ export const agentRegistry: AgentDefinition[] = [
   },
   {
     id: 'negotiations',
-    name: 'Negotiator Agent',
+    name: 'Negotiations Agent',
     description:
-      'Engages in multi-turn negotiations with a simulated adversary, using strategic reasoning to achieve optimal outcomes.',
+      'Registers a public product-lookup tool so the hub agent can find cities that sell all required parts for the negotiations task.',
     slug: 'negotiations',
     status: 'available',
     category: 'Data',
