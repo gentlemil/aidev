@@ -82,6 +82,17 @@ export const agentRegistry: AgentDefinition[] = [
     url: '/agents/firmware',
   },
   {
+    id: 'reactor',
+    name: 'Reactor Agent',
+    description:
+      'Navigates a robot through a 7×5 grid, avoiding vertically moving blocks, to reach the goal and retrieve the flag.',
+    slug: 'reactor',
+    status: 'available',
+    category: 'Automation',
+    icon: 'Zap',
+    url: '/agents/reactor',
+  },
+  {
     id: 'data-extractor',
     name: 'Data Extractor',
     description: 'Extract structured data from unstructured documents, tables, and scanned images.',
