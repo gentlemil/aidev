@@ -10,18 +10,18 @@ A full-stack platform for building and running AI agents, built with Next.js App
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Auth | Auth.js v5 (credentials + JWT) |
-| ORM | Prisma |
-| Database | SQLite (local) / PostgreSQL-ready |
-| Validation | Zod |
-| Forms | React Hook Form + @hookform/resolvers |
+| Layer        | Technology                            |
+| ------------ | ------------------------------------- |
+| Framework    | Next.js 14 (App Router)               |
+| Language     | TypeScript                            |
+| Styling      | Tailwind CSS + shadcn/ui              |
+| Auth         | Auth.js v5 (credentials + JWT)        |
+| ORM          | Prisma                                |
+| Database     | SQLite (local) / PostgreSQL-ready     |
+| Validation   | Zod                                   |
+| Forms        | React Hook Form + @hookform/resolvers |
 | AI Providers | OpenAI, OpenRouter, LM Studio (local) |
-| Icons | Lucide React |
+| Icons        | Lucide React                          |
 
 ## Agents
 
@@ -42,11 +42,61 @@ Multi-step function-calling agent that locates a suspect near a nuclear power pl
 **Flow:** Get power plants → Get suspect locations → Calculate distances (Haversine) → Check access level → Submit
 
 **Tools (function calling):**
+
 - `get_power_plants` — fetches plant list (city, code, power) from hub
 - `get_survivor_locations` — fetches lat/lng history for a given person
 - `calculate_distance` — server-side Haversine calculation (deterministic, no LLM guessing)
 - `check_access_level` — fetches access level by name + birth year
 - `submit_answer` — submits final answer to hub
+
+---
+
+### Pipeline (`/agents/pipeline`) — combine od S01E01 and S01E02
+
+Two-stage orchestrated pipeline: Stage 1 runs the People Tagger and submits suspects to the hub (with retry on partial results). Stage 2 takes the suspects list and runs Find Him to locate the closest one to a nuclear power plant.
+
+**Flow:** Stage 1 (tag + submit) → Stage 2 (locate + submit)
+
+**Pattern:** Sequential agent orchestration with shared state between stages.
+
+---
+
+### Evaluation Agent (`/agents/evaluation`) — S03E01
+
+Downloads ~10k sensor readings from the hub, detects anomalies via type/range validation and LLM-based operator note analysis, then submits a list of anomalous reading IDs.
+
+**Flow:** Fetch readings → Validate types/ranges → LLM analysis of operator notes → Submit anomaly IDs
+
+**Pattern:** Bulk data processing with hybrid rule-based + LLM validation.
+
+---
+
+### Firmware Agent (`/agents/firmware`) — S03E02
+
+Connects to a virtual Linux machine via a shell API, debugs a broken cooling system firmware (edits config files, removes lock file, runs binary), and submits the ECCS confirmation code to the hub.
+
+**Flow:** Edit settings.ini → Remove lock file → Run cooler.bin → Extract ECCS code → Submit
+
+**Tools (function calling):**
+
+- `execute_command` — runs shell commands on the remote VM (ls, cat, cd, editline, rm, find, etc.)
+- `submit_answer` — submits the extracted ECCS code to the hub
+
+**Pattern:** Stateful agentic loop with prompt caching, sliding context window, ban/reboot detection.
+
+---
+
+### Reactor Agent (`/agents/reactor`) — S03E03
+
+Navigates a robot through a 7×5 grid, avoiding vertically moving blocks, to reach the goal at column 7 and retrieve the flag.
+
+**Flow:** Start game → Move right/wait per turn → Detect game end → Extract flag
+
+**Tools (function calling):**
+
+- `send_command` — sends `right` / `left` / `wait` / `start` / `reset` to the hub; internally runs `analyzeBoard()` which simulates one step of block movement and returns `availableMoves` (pre-computed safe moves) alongside the raw board state
+
+**Pattern:** Reactive agentic loop with deterministic pre-processing — board analysis computed server-side so the LLM only picks from a safe move list rather than simulating block physics.
 
 ## Project Structure
 
@@ -57,14 +107,26 @@ src/
 │   ├── (dashboard)/               # /dashboard, /agents, /settings
 │   │   └── agents/
 │   │       ├── people/            # People Tagger UI
-│   │       └── find-him/          # Find Him UI
+│   │       ├── find-him/          # Find Him UI
+│   │       ├── pipeline/          # Pipeline UI
+│   │       ├── evaluation/        # Evaluation Agent UI
+│   │       ├── firmware/          # Firmware Agent UI
+│   │       └── reactor/           # Reactor Agent UI
 │   ├── api/tasks/
-│   │   ├── people/stream/         # SSE stream for People Tagger
-│   │   └── find-him/              # GET (power plants) + POST + stream
+│   │   ├── people/stream/         # SSE stream
+│   │   ├── find-him/stream/       # SSE stream
+│   │   ├── pipeline/stream/       # SSE stream
+│   │   ├── evaluation/            # POST (non-streaming)
+│   │   ├── firmware/stream/       # SSE stream
+│   │   └── reactor/stream/        # SSE stream
 │   └── api/auth/
 ├── configs/
-│   ├── people.config.ts           # URLs, model, filter params for S01E01
-│   └── find-him.config.ts         # URLs, max iterations for S01E02
+│   ├── people.config.ts           # S01E01 — filter params, model
+│   ├── find-him.config.ts         # S01E02 — max iterations
+│   ├── pipeline.config.ts         # S01E01 & SO1E02 — stage config
+│   ├── evaluation.config.ts       # S03E01 — thresholds, model
+│   ├── firmware.config.ts         # S03E02 — VM URL, binary path
+│   └── reactor.config.ts          # S03E03 — model, max iterations
 ├── features/
 │   ├── agents/
 │   │   └── agent-registry.ts      # Typed agent definitions
@@ -73,7 +135,11 @@ src/
 │       ├── hub.ts                 # submitAnswer() — shared across tasks
 │       └── tasks/
 │           ├── people/            # types, filter, tagger agent
-│           └── find-him/          # types, consts, tools, agent
+│           ├── find-him/          # types, consts, tools, agent
+│           ├── pipeline/          # orchestrator, stage1/stage2 agents
+│           ├── evaluation/        # types, validators, agent
+│           ├── firmware/          # types, events, tools, agent
+│           └── reactor/           # types, events, tools, agent
 ├── lib/
 │   ├── ai-models.ts               # AIProviders enum, PROVIDER_API, AVAILABLE_MODELS
 │   ├── csv.ts                     # Generic parseCSV<T>() with quoted-field support
@@ -92,11 +158,11 @@ src/
 
 All agents support switching provider and model from the UI:
 
-| Provider | Env var | Notes |
-|---|---|---|
+| Provider   | Env var              | Notes                                                    |
+| ---------- | -------------------- | -------------------------------------------------------- |
 | OpenRouter | `OPENROUTER_API_KEY` | Default. Supports all models via `provider/model` format |
-| OpenAI | `OPENAI_API_KEY` | Strips `openai/` prefix automatically |
-| LM Studio | — | No auth, local `http://localhost:1234` |
+| OpenAI     | `OPENAI_API_KEY`     | Strips `openai/` prefix automatically                    |
+| LM Studio  | —                    | No auth, local `http://localhost:1234`                   |
 
 Model IDs are defined in `src/lib/ai-models.ts` per provider.
 
@@ -106,14 +172,22 @@ Each agent has a dedicated config file in `src/configs/` that controls task-spec
 
 Example templates are committed and serve as the starting point:
 
-| Template | Copy to | Agent |
-|---|---|---|
-| `people.config.example.ts` | `people.config.ts` | People Tagger |
-| `find-him.config.example.ts` | `find-him.config.ts` | Find Him |
+| Template                       | Copy to                | Agent            |
+| ------------------------------ | ---------------------- | ---------------- |
+| `people.config.example.ts`     | `people.config.ts`     | People Tagger    |
+| `find-him.config.example.ts`   | `find-him.config.ts`   | Find Him         |
+| `pipeline.config.example.ts`   | `pipeline.config.ts`   | Pipeline         |
+| `evaluation.config.example.ts` | `evaluation.config.ts` | Evaluation Agent |
+| `firmware.config.example.ts`   | `firmware.config.ts`   | Firmware Agent   |
+| `reactor.config.example.ts`    | `reactor.config.ts`    | Reactor Agent    |
 
 ```bash
 cp src/configs/people.config.example.ts src/configs/people.config.ts
 cp src/configs/find-him.config.example.ts src/configs/find-him.config.ts
+cp src/configs/pipeline.config.example.ts src/configs/pipeline.config.ts
+cp src/configs/evaluation.config.example.ts src/configs/evaluation.config.ts
+cp src/configs/firmware.config.example.ts src/configs/firmware.config.ts
+cp src/configs/reactor.config.example.ts src/configs/reactor.config.ts
 ```
 
 > URLs that include `AI_DEVS_KEY` are built dynamically via getters — the key is read from `.env.local` at runtime, never hardcoded.
@@ -148,6 +222,7 @@ npm run setup          # install + generate + push schema + seed
 ```
 
 Or step by step:
+
 ```bash
 npm run db:generate
 npm run db:push
@@ -174,18 +249,18 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
-| `npm run db:generate` | Generate Prisma client |
-| `npm run db:push` | Push schema to DB (no migration) |
-| `npm run db:migrate` | Create and apply migration |
-| `npm run db:seed` | Seed admin user |
-| `npm run db:studio` | Open Prisma Studio |
-| `npm run setup` | install + generate + push + seed |
+| Script                | Description                      |
+| --------------------- | -------------------------------- |
+| `npm run dev`         | Start dev server                 |
+| `npm run build`       | Production build                 |
+| `npm run lint`        | ESLint                           |
+| `npm run format`      | Prettier                         |
+| `npm run db:generate` | Generate Prisma client           |
+| `npm run db:push`     | Push schema to DB (no migration) |
+| `npm run db:migrate`  | Create and apply migration       |
+| `npm run db:seed`     | Seed admin user                  |
+| `npm run db:studio`   | Open Prisma Studio               |
+| `npm run setup`       | install + generate + push + seed |
 
 ## Migrating to PostgreSQL
 
