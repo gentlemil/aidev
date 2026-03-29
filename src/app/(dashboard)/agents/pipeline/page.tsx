@@ -12,7 +12,10 @@ import {
   Wrench,
   XCircle,
 } from 'lucide-react'
-import type { PipelineStreamEvent, StepStatus } from '@/features/ai-devs/tasks/pipeline/pipeline.events'
+import type {
+  PipelineStreamEvent,
+  StepStatus,
+} from '@/features/ai-devs/tasks/pipeline/pipeline.events'
 import type { Suspect, FindHimAnswer } from '@/features/ai-devs/tasks/find-him/find-him.types'
 import type { TaggedPerson } from '@/features/ai-devs/tasks/people/people.types'
 import { PageContainer, PageHeader } from '@/components/layout/page-container'
@@ -25,19 +28,45 @@ import { cn } from '@/lib/utils'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type LogEntry =
-  | { kind: 'step'; stage: 'stage1' | 'stage2'; id: string; status: StepStatus; message: string; detail?: string; ts: Date }
+  | {
+      kind: 'step'
+      stage: 'stage1' | 'stage2'
+      id: string
+      status: StepStatus
+      message: string
+      detail?: string
+      ts: Date
+    }
   | { kind: 'retry'; attempt: number; maxAttempts: number; hubResponse: unknown; ts: Date }
-  | { kind: 'llm'; stage: 'stage1' | 'stage2'; model: string; promptTokens: number; completionTokens: number; totalTokens: number; ts: Date }
+  | {
+      kind: 'llm'
+      stage: 'stage1' | 'stage2'
+      model: string
+      promptTokens: number
+      completionTokens: number
+      totalTokens: number
+      ts: Date
+    }
   | { kind: 'tool'; name: string; args: string; ts: Date }
   | { kind: 'handoff'; suspects: Suspect[]; ts: Date }
 
-type LlmStats = { model: string; promptTokens: number; completionTokens: number; totalTokens: number }
+type LlmStats = {
+  model: string
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
 type PipelineResult = { answer: FindHimAnswer; hubResponse: unknown }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtTime(d: Date) {
-  return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return d.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 }
 
 function fmtNum(n: number) {
@@ -45,27 +74,34 @@ function fmtNum(n: number) {
 }
 
 function formatArgs(args: string) {
-  try { return JSON.stringify(JSON.parse(args)) } catch { return args }
+  try {
+    return JSON.stringify(JSON.parse(args))
+  } catch {
+    return args
+  }
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StageTag({ stage }: { stage: 'stage1' | 'stage2' }) {
   return (
-    <span className={cn(
-      'shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase',
-      stage === 'stage1'
-        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-    )}>
+    <span
+      className={cn(
+        'shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase',
+        stage === 'stage1'
+          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      )}>
       {stage === 'stage1' ? 'S1' : 'S2'}
     </span>
   )
 }
 
 function StepIcon({ status }: { status: StepStatus }) {
-  if (status === 'running') return <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
-  if (status === 'done') return <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+  if (status === 'running')
+    return <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
+  if (status === 'done')
+    return <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
   return <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
 }
 
@@ -75,7 +111,9 @@ function LogList({ entries }: { entries: LogEntry[] }) {
       {entries.map((entry, i) => {
         if (entry.kind === 'handoff') {
           return (
-            <div key={`handoff-${i}`} className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+            <div
+              key={`handoff-${i}`}
+              className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-950/20">
               <ArrowRight className="h-4 w-4 shrink-0 text-emerald-600" />
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                 Handoff — {entry.suspects.length} suspect(s) passed to Stage 2
@@ -87,7 +125,9 @@ function LogList({ entries }: { entries: LogEntry[] }) {
 
         if (entry.kind === 'retry') {
           return (
-            <div key={`retry-${i}`} className="ml-7 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-900/40 dark:bg-orange-950/20">
+            <div
+              key={`retry-${i}`}
+              className="ml-7 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-900/40 dark:bg-orange-950/20">
               <RefreshCw className="h-3.5 w-3.5 shrink-0 text-orange-500" />
               <span className="text-xs font-medium text-orange-700 dark:text-orange-400">
                 Retry {entry.attempt}/{entry.maxAttempts} — hub did not approve
@@ -99,14 +139,20 @@ function LogList({ entries }: { entries: LogEntry[] }) {
 
         if (entry.kind === 'llm') {
           return (
-            <div key={`llm-${i}`} className="ml-7 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/20">
+            <div
+              key={`llm-${i}`}
+              className="ml-7 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/20">
               <StageTag stage={entry.stage} />
               <Cpu className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-              <span className="font-mono text-xs font-medium text-amber-800 dark:text-amber-400">{entry.model}</span>
+              <span className="font-mono text-xs font-medium text-amber-800 dark:text-amber-400">
+                {entry.model}
+              </span>
               <span className="text-xs text-muted-foreground">·</span>
               <span className="text-xs text-muted-foreground">
                 {fmtNum(entry.promptTokens)} in / {fmtNum(entry.completionTokens)} out ={' '}
-                <span className="font-medium text-foreground">{fmtNum(entry.totalTokens)} tokens</span>
+                <span className="font-medium text-foreground">
+                  {fmtNum(entry.totalTokens)} tokens
+                </span>
               </span>
               <span className="ml-auto text-xs text-muted-foreground">{fmtTime(entry.ts)}</span>
             </div>
@@ -115,27 +161,37 @@ function LogList({ entries }: { entries: LogEntry[] }) {
 
         if (entry.kind === 'tool') {
           return (
-            <div key={`tool-${i}`} className="ml-7 flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700/40 dark:bg-stone-800/30">
+            <div
+              key={`tool-${i}`}
+              className="ml-7 flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700/40 dark:bg-stone-800/30">
               <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-500" />
               <div className="min-w-0 flex-1">
                 <span className="font-mono text-xs font-medium">{entry.name}</span>
-                <span className="ml-2 truncate font-mono text-xs text-muted-foreground">{formatArgs(entry.args)}</span>
+                <span className="ml-2 truncate font-mono text-xs text-muted-foreground">
+                  {formatArgs(entry.args)}
+                </span>
               </div>
-              <span className="ml-auto shrink-0 text-xs text-muted-foreground">{fmtTime(entry.ts)}</span>
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                {fmtTime(entry.ts)}
+              </span>
             </div>
           )
         }
 
         // step
         return (
-          <div key={`${entry.stage}-${entry.id}-${entry.status}`} className="flex items-start gap-3 py-1.5">
+          <div
+            key={`${entry.stage}-${entry.id}-${entry.status}`}
+            className="flex items-start gap-3 py-1.5">
             <StageTag stage={entry.stage} />
             <StepIcon status={entry.status} />
             <div className="flex flex-1 items-baseline justify-between gap-4">
               <span className="text-sm">{entry.message}</span>
               <div className="flex shrink-0 items-center gap-3">
                 {entry.detail && (
-                  <span className="max-w-xs truncate text-xs font-medium text-muted-foreground">{entry.detail}</span>
+                  <span className="max-w-xs truncate text-xs font-medium text-muted-foreground">
+                    {entry.detail}
+                  </span>
                 )}
                 <span className="text-xs text-muted-foreground">{fmtTime(entry.ts)}</span>
               </div>
@@ -178,89 +234,89 @@ export default function PipelinePage() {
     }
   }, [log])
 
-  function handleEvent(event: PipelineStreamEvent) {
-    const now = new Date()
+  // function handleEvent(event: PipelineStreamEvent) {
+  //   const now = new Date()
 
-    if (event.type === 'handoff') {
-      setHandoffSuspects(event.suspects)
-      setLog((prev) => [...prev, { kind: 'handoff', suspects: event.suspects, ts: now }])
-      return
-    }
+  //   if (event.type === 'handoff') {
+  //     setHandoffSuspects(event.suspects)
+  //     setLog((prev) => [...prev, { kind: 'handoff', suspects: event.suspects, ts: now }])
+  //     return
+  //   }
 
-    if (event.type === 'done') {
-      setRunStatus('done')
-      return
-    }
+  //   if (event.type === 'done') {
+  //     setRunStatus('done')
+  //     return
+  //   }
 
-    if (event.type === 'error') {
-      setError(event.message)
-      setRunStatus('error')
-      return
-    }
+  //   if (event.type === 'error') {
+  //     setError(event.message)
+  //     setRunStatus('error')
+  //     return
+  //   }
 
-    // Wrapped stage events
-    const { stage, event: stageEvent } = event
+  //   // Wrapped stage events
+  //   const { stage, event: stageEvent } = event
 
-    switch (stageEvent.type) {
-      case 'step': {
-        const entry: LogEntry = { kind: 'step', stage, ...stageEvent, ts: now }
-        setLog((prev) => {
-          const idx = prev.findIndex((e) => e.kind === 'step' && e.stage === stage && e.id === stageEvent.id)
-          if (idx >= 0) {
-            const updated = [...prev]
-            updated[idx] = { ...entry, ts: prev[idx].ts }
-            return updated
-          }
-          return [...prev, entry]
-        })
-        if (stageEvent.status === 'error') setRunStatus('error')
-        break
-      }
-      case 'tool': {
-        setLog((prev) => [...prev, { kind: 'tool', name: stageEvent.name, args: stageEvent.args, ts: now }])
-        break
-      }
-      case 'llm': {
-        const stats: LlmStats = {
-          model: stageEvent.model,
-          promptTokens: stageEvent.promptTokens,
-          completionTokens: stageEvent.completionTokens,
-          totalTokens: stageEvent.totalTokens,
-        }
-        if (stage === 'stage1') setStage1Stats(stats)
-        else setStage2Stats(stats)
+  //   switch (stageEvent.type) {
+  //     case 'step': {
+  //       const entry: LogEntry = { kind: 'step', stage, ...stageEvent, ts: now }
+  //       setLog((prev) => {
+  //         const idx = prev.findIndex((e) => e.kind === 'step' && e.stage === stage && e.id === stageEvent.id)
+  //         if (idx >= 0) {
+  //           const updated = [...prev]
+  //           updated[idx] = { ...entry, ts: prev[idx].ts }
+  //           return updated
+  //         }
+  //         return [...prev, entry]
+  //       })
+  //       if (stageEvent.status === 'error') setRunStatus('error')
+  //       break
+  //     }
+  //     case 'tool': {
+  //       setLog((prev) => [...prev, { kind: 'tool', name: stageEvent.name, args: stageEvent.args, ts: now }])
+  //       break
+  //     }
+  //     case 'llm': {
+  //       const stats: LlmStats = {
+  //         model: stageEvent.model,
+  //         promptTokens: stageEvent.promptTokens,
+  //         completionTokens: stageEvent.completionTokens,
+  //         totalTokens: stageEvent.totalTokens,
+  //       }
+  //       if (stage === 'stage1') setStage1Stats(stats)
+  //       else setStage2Stats(stats)
 
-        setLog((prev) => {
-          const idx = prev.findLastIndex((e) => e.kind === 'llm' && e.stage === stage)
-          const newEntry: LogEntry = { kind: 'llm', stage, ...stats, ts: idx >= 0 ? prev[idx].ts : now }
-          if (idx >= 0) {
-            const updated = [...prev]
-            updated[idx] = newEntry
-            return updated
-          }
-          return [...prev, { ...newEntry, ts: now }]
-        })
-        break
-      }
-      case 'retry': {
-        setLog((prev) => [...prev, { kind: 'retry', attempt: stageEvent.attempt, maxAttempts: stageEvent.maxAttempts, hubResponse: stageEvent.hubResponse, ts: now }])
-        break
-      }
-      case 'result': {
-        if (stage === 'stage1') {
-          setStage1Matched(stageEvent.matched)
-        } else {
-          setResult({ answer: stageEvent.answer, hubResponse: stageEvent.hubResponse })
-        }
-        break
-      }
-      case 'error': {
-        setError(stageEvent.message)
-        setRunStatus('error')
-        break
-      }
-    }
-  }
+  //       setLog((prev) => {
+  //         const idx = prev.findLastIndex((e) => e.kind === 'llm' && e.stage === stage)
+  //         const newEntry: LogEntry = { kind: 'llm', stage, ...stats, ts: idx >= 0 ? prev[idx].ts : now }
+  //         if (idx >= 0) {
+  //           const updated = [...prev]
+  //           updated[idx] = newEntry
+  //           return updated
+  //         }
+  //         return [...prev, { ...newEntry, ts: now }]
+  //       })
+  //       break
+  //     }
+  //     case 'retry': {
+  //       setLog((prev) => [...prev, { kind: 'retry', attempt: stageEvent.attempt, maxAttempts: stageEvent.maxAttempts, hubResponse: stageEvent.hubResponse, ts: now }])
+  //       break
+  //     }
+  //     case 'result': {
+  //       if (stage === 'stage1') {
+  //         setStage1Matched(stageEvent.matched)
+  //       } else {
+  //         setResult({ answer: stageEvent.answer, hubResponse: stageEvent.hubResponse })
+  //       }
+  //       break
+  //     }
+  //     case 'error': {
+  //       setError(stageEvent.message)
+  //       setRunStatus('error')
+  //       break
+  //     }
+  //   }
+  // }
 
   async function runPipeline() {
     setRunStatus('running')
@@ -298,7 +354,7 @@ export default function PipelinePage() {
           if (!line.startsWith('data: ')) continue
           const json = line.slice(6).trim()
           if (!json) continue
-          handleEvent(JSON.parse(json) as PipelineStreamEvent)
+          // handleEvent(JSON.parse(json) as PipelineStreamEvent)
         }
       }
     } catch (e) {
@@ -338,20 +394,25 @@ export default function PipelinePage() {
 
       {/* Pipeline overview */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20">
+        <Badge
+          variant="outline"
+          className="border-indigo-200 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20">
           Stage 1 · gpt-4o-mini · OpenAI · max 15 retries
         </Badge>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950/20">
+        <Badge
+          variant="outline"
+          className="border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950/20">
           Stage 2 · gpt-5-mini · OpenRouter
         </Badge>
         {runStatus !== 'idle' && (
-          <span className={cn(
-            'ml-auto text-xs font-medium',
-            runStatus === 'running' && 'text-amber-600',
-            runStatus === 'done' && 'text-emerald-600',
-            runStatus === 'error' && 'text-destructive'
-          )}>
+          <span
+            className={cn(
+              'ml-auto text-xs font-medium',
+              runStatus === 'running' && 'text-amber-600',
+              runStatus === 'done' && 'text-emerald-600',
+              runStatus === 'error' && 'text-destructive'
+            )}>
             {runStatus === 'running' ? '● Running' : runStatus === 'done' ? '● Done' : '● Error'}
           </span>
         )}
@@ -416,7 +477,9 @@ export default function PipelinePage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <span className="rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">S1</span>
+              <span className="rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                S1
+              </span>
               Matched People → Stage 2 Suspects
             </CardTitle>
           </CardHeader>
@@ -425,7 +488,11 @@ export default function PipelinePage() {
               <thead className="bg-muted/50">
                 <tr>
                   {['Name', 'Surname', 'Born', 'City', 'Tags'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</th>
+                    <th
+                      key={h}
+                      className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -439,7 +506,11 @@ export default function PipelinePage() {
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
                         {p.tags.map((t) => (
-                          <span key={t} className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">{t}</span>
+                          <span
+                            key={t}
+                            className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                            {t}
+                          </span>
                         ))}
                       </div>
                     </td>
@@ -456,27 +527,43 @@ export default function PipelinePage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">S2</span>
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                S2
+              </span>
               Result
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-lg border bg-card p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suspect</p>
-                <p className="mt-1 text-base font-bold">{result.answer.name} {result.answer.surname}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Suspect
+                </p>
+                <p className="mt-1 text-base font-bold">
+                  {result.answer.name} {result.answer.surname}
+                </p>
               </div>
               <div className="rounded-lg border bg-card p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Power Plant</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Power Plant
+                </p>
                 <p className="mt-1 font-mono text-base font-bold">{result.answer.powerPlant}</p>
               </div>
               <div className="rounded-lg border bg-card p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Access Level</p>
-                <p className="mt-1 text-2xl font-bold text-amber-600">{result.answer.accessLevel}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Access Level
+                </p>
+                <p className="mt-1 text-2xl font-bold text-amber-600">
+                  {result.answer.accessLevel}
+                </p>
               </div>
               <div className="rounded-lg border bg-emerald-50 p-4 dark:bg-emerald-950/20">
-                <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Status</p>
-                <p className="mt-1 text-base font-bold text-emerald-700 dark:text-emerald-400">Submitted</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                  Status
+                </p>
+                <p className="mt-1 text-base font-bold text-emerald-700 dark:text-emerald-400">
+                  Submitted
+                </p>
               </div>
             </div>
             <div className="rounded-lg border">
