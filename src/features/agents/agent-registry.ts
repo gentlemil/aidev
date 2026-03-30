@@ -103,6 +103,17 @@ export const agentRegistry: AgentDefinition[] = [
     icon: 'Database',
     url: '/agents/negotiations',
   },
+  {
+    id: 'savethem',
+    name: 'SaveThem Agent',
+    description:
+      'Discovers hub tools, acquires a 10×10 terrain map, selects a vehicle, plans a route from S to G, and retrieves the flag.',
+    slug: 'savethem',
+    status: 'available',
+    category: 'Automation',
+    icon: 'Navigation',
+    url: '/agents/savethem',
+  },
   // {
   //   id: 'data-extractor',
   //   name: 'Data Extractor',

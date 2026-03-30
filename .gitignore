@@ -42,6 +42,7 @@ prisma/dev.db-journal
 
 # AI Devs Hub data
 /ai_devs_lessons
+/src/features/ai-devs/tasks/savethem/savethem-instructions.md
 
 # Config files — contain task-specific settings, ignored to allow per-dev customisation
 /src/configs/*.ts
