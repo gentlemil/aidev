@@ -114,6 +114,17 @@ export const agentRegistry: AgentDefinition[] = [
     icon: 'Navigation',
     url: '/agents/savethem',
   },
+  {
+    id: 'okoeditor',
+    name: 'OKO Editor',
+    description:
+      'Logs into the OKO monitoring panel, scrapes incident and task IDs with cheerio, then updates records via the Centrala API.',
+    slug: 'okoeditor',
+    status: 'available',
+    category: 'Automation',
+    icon: 'Eye',
+    url: '/agents/okoeditor',
+  },
   // {
   //   id: 'data-extractor',
   //   name: 'Data Extractor',
