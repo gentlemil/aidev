@@ -82,14 +82,33 @@ export async function runOkoEditorAgent(onEvent: (e: OkoEditorStreamEvent) => vo
 
   if (authStatus >= 400) return
 
-  // ── Step 4: Extract incident links ───────────────────────────────────────────
-  const recentIncidents = extractRecentIncidentLinks(authHtml)
+  // ── Step 4: GET /incydenty and extract all incident links ────────────────────
+  const incydentsUrl = `${baseUrl}/incydenty`
+  step(onEvent, 'incydenty-open', 'running', `Opening ${incydentsUrl}`)
+  const { status: incydentsStatus, html: incydentsHtml } = await getPageAsUser(incydentsUrl, session)
+  step(
+    onEvent,
+    'incydenty-open',
+    incydentsStatus < 400 ? 'done' : 'error',
+    `GET ${incydentsUrl}`,
+    `HTTP ${incydentsStatus}`
+  )
+  onEvent({
+    type: 'response',
+    stepId: 'incydenty-open',
+    httpStatus: incydentsStatus,
+    htmlLength: incydentsHtml.length,
+    bodyPreview: incydentsHtml,
+  })
+  if (incydentsStatus >= 400) return
+
+  const recentIncidents = extractRecentIncidentLinks(incydentsHtml)
   const incidentIds = recentIncidents.map((incident) => incident.id)
   step(
     onEvent,
     'extract',
     'done',
-    `Found ${recentIncidents.length} incident(s) in recent-hours register`,
+    `Found ${recentIncidents.length} incident(s) on /incydenty`,
     incidentIds.join(', ').slice(0, 80) || '(none)'
   )
 
@@ -162,26 +181,35 @@ export async function runOkoEditorAgent(onEvent: (e: OkoEditorStreamEvent) => vo
     `HTTP ${skolwinUpdate.status}`
   )
 
-  // ── Step 7: Diversion update on a different incident (Komarowo) ─────────────
-  const diversionIncident = recentIncidents.find((incident) => incident.id !== skolwinIncidentId)
+  // ── Step 7: Diversion update — find PROB incident, fall back to any non-Skolwin ─
+  const probIncident = recentIncidents.find((incident) => {
+    if (incident.id === skolwinIncidentId) return false
+    const html = incidentHtmlById.get(incident.id) ?? ''
+    return /\bPROB\b/i.test(html)
+  })
+  const diversionIncident = probIncident ?? recentIncidents.find((incident) => incident.id !== skolwinIncidentId)
   if (!diversionIncident) {
     step(onEvent, 'edit-komarowo', 'error', 'No second incident available for Komarowo diversion')
     onEvent({ type: 'done' })
     return
   }
-
-  const komarowoContent =
-    'W okolicach miasta Komarowo wykryto ruch ludzi, co wskazuje na nową aktywność w tym rejonie.'
   step(
     onEvent,
     'edit-komarowo',
     'running',
-    `Updating incident ${diversionIncident.id} with Komarowo diversion`
+    probIncident
+      ? `Found PROB incident ${diversionIncident.id} for Komarowo diversion`
+      : `No PROB incident found — using fallback ${diversionIncident.id}`
   )
+
+  const komarowoTitle = 'MOVE01 W Komarowo wykryto ruch ludzi'
+  const komarowoContent =
+    'W okolicach miasta Komarowo wykryto ruch ludzi, co wskazuje na nową aktywność w tym rejonie.'
   const komarowoUpdate = await callOkoVerify({
     page: 'incydenty',
     id: diversionIncident.id,
     action: 'update',
+    title: komarowoTitle,
     content: komarowoContent,
   })
   onEvent({
