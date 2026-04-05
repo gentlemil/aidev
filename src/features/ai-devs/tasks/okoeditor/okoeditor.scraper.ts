@@ -1,3 +1,4 @@
+import { load } from 'cheerio'
 import { OKOEDITOR_CONFIG as config } from '@/configs/okoeditor.config'
 import type { LoginResult } from './okoeditor.types'
 
@@ -63,4 +64,109 @@ export async function getPageAsUser(url: string, session: string): Promise<{ sta
   const html = await res.text()
   console.log('[okoeditor] GET (authenticated)', url, '→', res.status, '| length:', html.length)
   return { status: res.status, html }
+}
+
+function maskedBody(body: Record<string, unknown>): string {
+  return JSON.stringify({ ...body, apikey: '*****' }, null, 2)
+}
+
+export async function callOkoVerify(answer: Record<string, unknown>): Promise<{
+  status: number
+  requestUrl: string
+  requestBodyMasked: string
+  responseBody: string
+}> {
+  const verifyUrl = process.env.AI_DEVS_VERIFY_URL ?? `${config.okoBaseUrl}/verify`
+  const body = {
+    apikey: process.env.AI_DEVS_KEY ?? '',
+    task: config.task,
+    answer,
+  }
+
+  const res = await fetchWithTimeout(verifyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const responseBody = await res.text().catch(() => '(empty)')
+
+  return {
+    status: res.status,
+    requestUrl: `POST ${verifyUrl}`,
+    requestBodyMasked: maskedBody(body),
+    responseBody,
+  }
+}
+
+export interface IncidentCandidate {
+  id: string
+  href: string
+}
+
+export interface TaskCandidate {
+  id: string
+  href: string
+}
+
+function extractIncidentIdFromHref(href: string): string | null {
+  const match = href.match(/\/incydenty\/([0-9a-f]{32,})/i)
+  return match?.[1] ?? null
+}
+
+function collectIncidentLinksFromRoot(root: ReturnType<typeof load>): IncidentCandidate[] {
+  const incidents = new Map<string, IncidentCandidate>()
+  root('a[href]').each((_, el) => {
+    const href = root(el).attr('href') ?? ''
+    const id = extractIncidentIdFromHref(href)
+    if (!id) return
+    incidents.set(id, { id, href })
+  })
+  return Array.from(incidents.values())
+}
+
+// Extracts incidents from the "recent hours event register" section first.
+// Falls back to all incident links if section is not found.
+export function extractRecentIncidentLinks(html: string): IncidentCandidate[] {
+  const $ = load(html)
+  const sectionHeading = $('h1,h2,h3,h4,h5,h6,p,strong,legend,span,div').filter((_, el) => {
+    const text = ($(el).text() ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
+    return /rejestr.*zdarze[nń].*ostatnich.*godzin/.test(text)
+  }).first()
+
+  if (sectionHeading.length > 0) {
+    let sectionContainer = sectionHeading.closest('section,article,main,div,table,ul,ol,tbody').first()
+    if (sectionContainer.length === 0) {
+      sectionContainer = sectionHeading.parent()
+    }
+    const scoped = collectIncidentLinksFromRoot(load(sectionContainer.html() ?? ''))
+    if (scoped.length > 0) {
+      console.log('[okoeditor] extractRecentIncidentLinks scoped found:', scoped.length)
+      return scoped
+    }
+  }
+
+  const fallback = collectIncidentLinksFromRoot($)
+  console.log('[okoeditor] extractRecentIncidentLinks fallback found:', fallback.length)
+  return fallback
+}
+
+function extractTaskIdFromHref(href: string): string | null {
+  const match = href.match(/\/zadania\/([0-9a-f]{32,})/i)
+  return match?.[1] ?? null
+}
+
+export function extractTaskLinks(html: string): TaskCandidate[] {
+  const $ = load(html)
+  const tasks = new Map<string, TaskCandidate>()
+
+  $('a[href]').each((_, el) => {
+    const href = $(el).attr('href') ?? ''
+    const id = extractTaskIdFromHref(href)
+    if (!id) return
+    tasks.set(id, { id, href })
+  })
+
+  const out = Array.from(tasks.values())
+  console.log('[okoeditor] extractTaskLinks found:', out.length)
+  return out
 }

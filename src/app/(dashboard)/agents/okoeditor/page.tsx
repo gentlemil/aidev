@@ -102,6 +102,43 @@ export default function OkoEditorPage() {
           response: { httpStatus: event.httpStatus, htmlLength: event.htmlLength, bodyPreview: event.bodyPreview },
         })
         break
+      case 'incident':
+        upsertStep({
+          id: `incident-${event.incidentId}`,
+          status: event.shouldEdit ? 'done' : 'error',
+          message: `Incident ${event.incidentId}`,
+          detail: `Skolwin=${event.mentionsSkolwin} | vehicles_or_people=${event.mentionsVehiclesOrPeople} | shouldEdit=${event.shouldEdit} | ${event.reasoning}`,
+        })
+        break
+      case 'task':
+        upsertStep({
+          id: `task-${event.taskId}`,
+          status: event.matched ? 'done' : 'error',
+          message: `Task ${event.taskId}`,
+          detail: `Skolwin=${event.mentionsSkolwin} | matched=${event.matched} | ${event.reasoning}`,
+        })
+        break
+      case 'summary':
+        upsertStep({
+          id: 'summary',
+          status: 'done',
+          message: 'IDs to edit',
+          detail: event.idsToEdit.length > 0 ? event.idsToEdit.join(', ') : '(none)',
+        })
+        break
+      case 'verify':
+        upsertStep({
+          id: event.stepId,
+          response: {
+            httpStatus: event.responseStatus,
+            htmlLength: event.responseBody.length,
+            bodyPreview:
+              `REQUEST: ${event.requestUrl}\n${event.requestBody}\n\n` +
+              `RESPONSE STATUS: ${event.responseStatus}\n` +
+              `${event.responseBody}`,
+          },
+        })
+        break
       case 'error':
         setError(event.message)
         setRunStatus('error')
@@ -154,7 +191,7 @@ export default function OkoEditorPage() {
     <PageContainer>
       <PageHeader
         title="OKO Editor"
-        description="Opens the OKO panel, logs in as Zofia, and shows the authenticated response.">
+        description="Scrapes recent incidents, analyzes them, updates records via /verify, and displays full request/response logs.">
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
             <a href="https://oko.ag3nts.org" target="_blank" rel="noopener noreferrer">
